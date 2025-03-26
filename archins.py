@@ -7,16 +7,28 @@ from colorama import Fore, Style, init
 from modules.logger import customize_logger
 from modules.yay import install_yay
 
-customize_logger()
-
 init(autoreset=True)
+customize_logger()
 logger.success("The program has been launched successfully. Starting the Installer.")
-        
+
 def get_installed_packages():
-    pacman_list = os.popen("pacman -Qq").read().splitlines()
-    return set(pacman_list)
+    """Returns a set of currently installed packages."""
+    return set(os.popen("pacman -Qq").read().splitlines())
+
+def categorize_packages(packages):
+    """Categorizes packages into official repository and AUR."""
+    pacman_packages, aur_packages = [], []
+    
+    for pkg in packages:
+        if os.system(f"pacman -Si {pkg} > /dev/null 2>&1") == 0:
+            pacman_packages.append(pkg)
+        else:
+            aur_packages.append(pkg)
+    
+    return pacman_packages, aur_packages
 
 def install_packages(packages):
+    """Installs the given list of packages."""
     if not packages:
         logger.error("No packages selected. Exiting...")
         return
@@ -28,14 +40,7 @@ def install_packages(packages):
         logger.success("All selected packages are already installed.")
         return
     
-    pacman_packages = []
-    aur_packages = []
-    
-    for pkg in packages_to_install:
-        if os.system(f"pacman -Si {pkg} > /dev/null 2>&1") == 0:
-            pacman_packages.append(pkg)
-        else:
-            aur_packages.append(pkg)
+    pacman_packages, aur_packages = categorize_packages(packages_to_install)
     
     if pacman_packages:
         logger.info(Fore.CYAN + "Installing official repository packages with pacman...")
@@ -44,6 +49,31 @@ def install_packages(packages):
     if aur_packages:
         logger.info(Fore.MAGENTA + "Installing AUR packages with yay...")
         os.system(f"yay -S --noconfirm {' '.join(aur_packages)}")
+
+def prompt_categories(category_dict):
+    """Prompts user to select categories and packages."""
+    category_question = [
+        inquirer.Checkbox(
+            "categories", 
+            message="Select package categories:", 
+            choices=list(category_dict.keys())
+        )
+    ]
+    selected_categories = inquirer.prompt(category_question)["categories"]
+    
+    selected_packages = []
+    for category in selected_categories:
+        package_question = [
+            inquirer.Checkbox(
+                "packages", 
+                message=f"Select packages from {category}:", 
+                choices=category_dict[category]
+            )
+        ]
+        selected = inquirer.prompt(package_question)["packages"]
+        selected_packages.extend(selected)
+    
+    return selected_packages
 
 def main():
     install_yay()
@@ -63,37 +93,17 @@ def main():
         "Productivity": ["libreoffice", "thunderbird"],
         "Browsers": ["google-chrome", "brave-bin", "vivaldi"],
         "Online Media": ["spotify", "discord"],
-        "Advanced Users": ["starship","qbittorrent"],
+        "Advanced Users": ["starship", "qbittorrent"],
         "Security & Networking": ["openvpn"],
         "Gaming": ["steam"]
     }
     
-    category_question = [
-        inquirer.Checkbox(
-            "categories", 
-            message="Select package categories:", 
-            choices=list(package_categories.keys())
-        )
-    ]
-    selected_categories = inquirer.prompt(category_question)["categories"]
+    selected_packages = prompt_categories(package_categories)
     
-    selected_packages = []
-    for category in selected_categories:
-        package_question = [
-            inquirer.Checkbox(
-                "packages", 
-                message=f"Select packages from {category}:", 
-                choices=package_categories[category]
-            )
-        ]
-        selected = inquirer.prompt(package_question)["packages"]
-        selected_packages.extend(selected)
-    
-    confirm = inquirer.confirm("Confirm installation of selected packages?", default=True)
-    if confirm:
+    if inquirer.confirm("Confirm installation of selected packages?", default=True):
         install_packages(selected_packages)
     else:
-        logger.error("Installtion Cancelled!")
+        logger.error("Installation Cancelled!")
 
 if __name__ == "__main__":
     main()
