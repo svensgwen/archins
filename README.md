@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-hi
-=======
 <div align="center">
 	<h1>(• ˕ •)</h1>
 	<h1>Archins</h1>
@@ -61,4 +58,3 @@ still in development
 The project is actively <a href="#">developing</a>, so you can offer your ideas for improvement.
 
 Thank you for your support! ❤️
->>>>>>> 9a4afb2 (readme update and sh files)
