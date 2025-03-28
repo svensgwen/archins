@@ -1,3 +1,4 @@
+InquirerPy
 inquirer
 colorama
 loguru

@@ -77,9 +77,8 @@ def prompt_categories(category_dict):
 
 def main():
     install_yay()
-    
     default_packages = [
-        "vlc", "audacious", "htop", "gwenview", "timeshift", "flatpak", "fastfetch", "kitty",
+        "grub", "efibootmgr", "partitionmanager","vlc", "audacious", "htop", "gwenview", "timeshift", "flatpak", "fastfetch", "kitty",
         "neofetch", "curl"
     ]
     
